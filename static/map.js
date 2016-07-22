@@ -110,7 +110,35 @@ function initMap() {
             lng: center_lng
         },
         map: map,
-        animation: google.maps.Animation.DROP
+        animation: google.maps.Animation.DROP,
+        draggable: true
+    });
+
+    var initialPosition = null;
+    marker.addListener('dragstart', function (e) {
+        initialPosition = {
+            lat: e.latLng.lat(),
+            lng: e.latLng.lng(),
+        };
+    });
+
+    marker.addListener('dragend', function (e) {
+        $.post('next_loc?' + $.param({
+                lat: e.latLng.lat(),
+                lon: e.latLng.lng(),
+            }))
+            .done(function (r) {
+                if (r != 'ok' && initialPosition != null) {
+                    marker.setPosition(initialPosition);
+                    initialPosition = null;
+                }
+            })
+            .fail(function () {
+                if (initialPosition != null) {
+                    marker.setPosition(initialPosition);
+                    initialPosition = null;
+                }
+            });
     });
 
     initSidebar();
@@ -311,16 +339,6 @@ function addListeners(marker) {
         marker.persist = null;
     });
 
-    marker.addListener('mouseover', function() {
-        marker.infoWindow.open(map, marker);
-        updateLabelDiffTime();
-    });
-
-    marker.addListener('mouseout', function() {
-        if (!marker.persist) {
-            marker.infoWindow.close();
-        }
-    });
     return marker
 };
 
