@@ -339,7 +339,8 @@ function setupScannedMarker(item) {
         center: circleCenter,
         radius: 100,    // 10 miles in metres
         fillColor: getColorByDate(item.last_modified),
-        strokeWeight: 1
+        strokeWeight: 1,
+        fillOpacity: 0.2
     });
 
     // marker.infoWindow = new google.maps.InfoWindow({
@@ -466,7 +467,10 @@ function updateMap() {
             }
 
             if (item.scanned_id in map_scanned) {
-                map_scanned[item.scanned_id].marker.setOptions({fillColor: getColorByDate(item.last_modified)});
+                map_scanned[item.scanned_id].marker.setOptions({
+                    fillColor: getColorByDate(item.last_modified),
+                    strokeWeight: 0.3
+                });
             }
             else { // add marker to map and item to dict
                 if (item.marker) item.marker.setMap(null);
