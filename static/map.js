@@ -759,6 +759,9 @@ $(function () {
 
     $('#follow-marker').change(function() {
         localStorage["followMarker"] = this.checked;
+        if (this.checked && null !== last_location) {
+            map.panTo(new google.maps.LatLng(last_location.lat, last_location.lon));
+        }
     });
 
     $('#scanned-switch').change(function() {
