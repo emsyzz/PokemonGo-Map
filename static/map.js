@@ -106,6 +106,7 @@ function initMap() {
     });
 
     marker.addListener('dragend', function (e) {
+        last_location = {lat: e.latLng.lat(), lon: e.latLng.lng()};
         $.post('next_loc?' + $.param({
                 lat: e.latLng.lat(),
                 lon: e.latLng.lng(),
