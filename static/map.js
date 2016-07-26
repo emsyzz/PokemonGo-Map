@@ -343,7 +343,7 @@ function setupScannedMarker(item) {
         radius: 100,    // 10 miles in metres
         fillColor: getColorByDate(item.last_modified),
         strokeWeight: 1,
-        fillOpacity: 0.2
+        fillOpacity: 0.1
     });
 
     // marker.infoWindow = new google.maps.InfoWindow({
