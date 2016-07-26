@@ -118,10 +118,6 @@ var StoreOptions = {
         default: [],
         type: StoreTypes.JSON
     },
-    followMarker: {
-        default: true,
-        type: StoreTypes.Boolean
-    },
     showGyms: {
         default: false,
         type: StoreTypes.Boolean
@@ -140,6 +136,10 @@ var StoreOptions = {
     },
     showScanned: {
         default: false,
+        type: StoreTypes.Boolean
+    },
+    followMarker: {
+        default: true,
         type: StoreTypes.Boolean
     },
     playSound: {
@@ -220,7 +220,7 @@ function initMap() {
             lat: center_lat,
             lng: center_lng
         },
-        zoom: 16,
+        zoom: 14,
         fullscreenControl: true,
         streetViewControl: false,
 		mapTypeControl: true,
@@ -293,34 +293,6 @@ function createSearchMarker() {
         draggable: true
     });
 
-    var initialPosition = null;
-    marker.addListener('dragstart', function (e) {
-        initialPosition = {
-            lat: e.latLng.lat(),
-            lng: e.latLng.lng(),
-        };
-    });
-
-    marker.addListener('dragend', function (e) {
-        last_location = {lat: e.latLng.lat(), lon: e.latLng.lng()};
-        $.post('next_loc?' + $.param({
-                lat: e.latLng.lat(),
-                lon: e.latLng.lng(),
-            }))
-            .done(function (r) {
-                if (r != 'ok' && initialPosition != null) {
-                    marker.setPosition(initialPosition);
-                    initialPosition = null;
-                }
-            })
-            .fail(function () {
-                if (initialPosition != null) {
-                    marker.setPosition(initialPosition);
-                    initialPosition = null;
-                }
-            });
-    });
-
     var oldLocation = null;
     google.maps.event.addListener(marker, 'dragstart', function() {
         oldLocation = marker.getPosition();
@@ -343,14 +315,13 @@ function createSearchMarker() {
 }
 
 function initSidebar() {
-
-    $('#follow-marker').prop('checked', Store.get('followMarker'));
     $('#gyms-switch').prop('checked', Store.get('showGyms'));
     $('#pokemon-switch').prop('checked', Store.get('showPokemon'));
     $('#pokestops-switch').prop('checked', Store.get('showPokestops'));
     $('#geoloc-switch').prop('checked', Store.get('geoLocate'));
     $('#scanned-switch').prop('checked', Store.get('showScanned'));
     $('#sound-switch').prop('checked', Store.get('playSound'));
+    $('#follow-marker').prop('checked', Store.get('followMarker'));
 
     var searchBox = new google.maps.places.SearchBox(document.getElementById('next-location'));
 
@@ -363,11 +334,6 @@ function initSidebar() {
 
         var loc = places[0].geometry.location;
         changeLocation(loc.lat(), loc.lng());
-        $.post("next_loc?lat=" + loc.lat() + "&lon=" + loc.lng(), {}).done(function (data) {
-            $("#next-location").val("");
-            map.setCenter(loc);
-            marker.setPosition(loc);
-        });
     });
 
     var icons = $('#pokemon-icons');
@@ -714,7 +680,6 @@ function clearStaleMarkers() {
     });
 };
 
-
 function clearOutOfBoundsMarkers(markers) {
   $.each(markers, function(key, value) {
       var marker = markers[key].marker;
@@ -836,6 +801,8 @@ function processLuredPokemon(i, item) {
         item2.marker = setupPokemonMarker(item2);
         map_data.lure_pokemons[item2.pokestop_id] = item2;
 
+    }
+
 }
 
 function processGyms(i, item) {
@@ -897,6 +864,7 @@ function updateMap() {
         clearStaleMarkers();
     });
 };
+
 
 
 function redrawPokemon(pokemon_list) {
@@ -1182,30 +1150,15 @@ $(function () {
         redrawPokemon(map_data.lure_pokemons);
     });
 
-    $('#follow-marker').change(function() {
-        localStorage["followMarker"] = this.checked;
-        if (this.checked && null !== last_location) {
-            map.panTo(new google.maps.LatLng(last_location.lat, last_location.lon));
-        }
-    });
-
-    $('#scanned-switch').change(function() {
-        localStorage["showScanned"] = this.checked;
-        if (this.checked) {
-            updateMap();
-        } else {
-            $.each(map_scanned, function(key, value) {
-                map_scanned[key].marker.setMap(null);
-            });
-            map_scanned = {}
-        }
-    });
-
     $('#geoloc-switch').change(function() {  
         if(!navigator.geolocation)  
             this.checked = false;  
         else   
             Store.set('geoLocate', this.checked);
+    });
+
+    $('#follow-location').change(function() {
+        Store.set('followLocation', this.checked);
     });
 
 });
