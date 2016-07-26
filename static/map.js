@@ -417,7 +417,9 @@ function updateMap() {
         if (result.location.lon && result.location.lat) {
             if (null !== last_location) {
                 if (last_location.lat != result.location.lat || last_location.lon != result.location.lon) {
-                    marker.setPosition(new google.maps.LatLng(result.location.lat, result.location.lon));
+                    var LatLon = new google.maps.LatLng(result.location.lat, result.location.lon);
+                    map.setCenter(LatLon);
+                    marker.setPosition(LatLon);
                 }
             }
             last_location = result.location;
