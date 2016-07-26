@@ -27,11 +27,13 @@ def parse_unicode(bytestring):
     decoded_string = bytestring.decode(sys.getfilesystemencoding())
     return decoded_string
 
+
 def verify_config_file_exists(filename):
     fullpath = os.path.join(os.path.dirname(__file__), filename)
     if os.path.exists(fullpath) is False:
         log.info("Could not find " + filename + ", copying default")
         shutil.copy2(fullpath + '.example', fullpath)
+
 
 def parse_config(args):
     verify_config_file_exists('../config/config.ini')
@@ -107,7 +109,6 @@ def get_args():
 
         if args.password is None:
             args.password = getpass.getpass()
-
 
     return args
 

@@ -148,6 +148,11 @@ function initSidebar() {
 
         var loc = places[0].geometry.location;
         changeLocation(loc.lat(), loc.lng());
+        $.post("next_loc?lat=" + loc.lat() + "&lon=" + loc.lng(), {}).done(function (data) {
+            $("#next-location").val("");
+            map.setCenter(loc);
+            marker.setPosition(loc);
+        });
     });
 }
 
@@ -257,6 +262,14 @@ function scannedLabel(last_modified) {
         </div>`;
     return contentstring;
 };
+
+// Dicts
+map_pokemons = {} // Pokemon
+map_gyms = {} // Gyms
+map_pokestops = {} // Pokestops
+map_scanned = {} // Pokestops
+var gym_types = ["Uncontested", "Mystic", "Valor", "Instinct"];
+var audio = new Audio('https://github.com/AHAAAAAAA/PokemonGo-Map/raw/develop/static/sounds/ding.mp3');
 
 function setupPokemonMarker(item) {
     var marker = new google.maps.Marker({
@@ -504,7 +517,62 @@ function updateMap() {
     });
 };
 
-function updateLabelDiffTime() {
+window.setInterval(updateMap, 5000);
+updateMap();
+
+document.getElementById('gyms-switch').onclick = function() {
+    localStorage["showGyms"] = this.checked;
+    if (this.checked) {
+        updateMap();
+    } else {
+        $.each(map_gyms, function(key, value) {
+            map_gyms[key].marker.setMap(null);
+        });
+        map_gyms = {}
+    }
+};
+
+$('#pokemon-switch').change(function() {
+    localStorage["showPokemon"] = this.checked;
+    if (this.checked) {
+        updateMap();
+    } else {
+        $.each(map_pokemons, function(key, value) {
+            map_pokemons[key].marker.setMap(null);
+        });
+        map_pokemons = {}
+    }
+});
+
+$('#pokestops-switch').change(function() {
+    localStorage["showPokestops"] = this.checked;
+    if (this.checked) {
+        updateMap();
+    } else {
+        $.each(map_pokestops, function(key, value) {
+            map_pokestops[key].marker.setMap(null);
+        });
+        map_pokestops = {}
+    }
+});
+
+$('#sound-switch').change(function() {
+    localStorage["playSound"] = this.checked;
+});
+
+$('#scanned-switch').change(function() {
+    localStorage["showScanned"] = this.checked;
+    if (this.checked) {
+        updateMap();
+    } else {
+        $.each(map_scanned, function(key, value) {
+            map_scanned[key].marker.setMap(null);
+        });
+        map_scanned = {}
+    }
+});
+
+var updateLabelDiffTime = function() {
     $('.label-countdown').each(function(index, element) {
         var disappearsAt = new Date(parseInt(element.getAttribute("disappears-at")));
         var now = new Date();
