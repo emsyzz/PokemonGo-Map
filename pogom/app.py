@@ -57,6 +57,8 @@ class Pogom(Flask):
         if request.args.get('scanned', 'true') == 'true':
             d['scanned'] = ScannedLocation.get_recent()
 
+        d['location'] = {'lat': config['ORIGINAL_LATITUDE'], 'lon': config['ORIGINAL_LONGITUDE']}
+
         return jsonify(d)
 
     def loc(self):

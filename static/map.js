@@ -27,6 +27,7 @@ var map_pokestops = {}
 var map_scanned = {}
 var gym_types = ["Uncontested", "Mystic", "Valor", "Instinct"];
 var audio = new Audio('https://github.com/AHAAAAAAA/PokemonGo-Map/raw/develop/static/sounds/ding.mp3');
+var last_location = null;
 
 //
 // Functions
@@ -412,7 +413,17 @@ function updateMap() {
         },
         dataType: "json"
     }).done(function(result) {
-      $.each(result.pokemons, function(i, item){
+      
+        if (result.location.lon && result.location.lat) {
+            if (null !== last_location) {
+                if (last_location.lat != result.location.lat || last_location.lon != result.location.lon) {
+                    marker.setPosition(new google.maps.LatLng(result.location.lat, result.location.lon));
+                }
+            }
+            last_location = result.location;
+        }
+
+        $.each(result.pokemons, function(i, item){
           if (!localStorage.showPokemon) {
               return false; // in case the checkbox was unchecked in the meantime.
           }
