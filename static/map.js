@@ -12,6 +12,7 @@ var idToPokemon = {};
 
 var excludedPokemon = [];
 var notifiedPokemon = [];
+var last_location = null;
 
 var map;
 var rawDataIsLoading = false;
@@ -292,6 +293,10 @@ function createSearchMarker() {
         animation: google.maps.Animation.DROP,
         draggable: true
     });
+
+    if (null === last_location) {
+        last_location = {lat: center_lat, lng: center_lng};
+    }
 
     var oldLocation = null;
     google.maps.event.addListener(marker, 'dragstart', function() {
@@ -847,6 +852,17 @@ function processScanned(i, item) {
 
 }
 
+function centerLocationMarker(loc) {
+    var newLocation = new google.maps.LatLng(loc.lat, loc.lng);
+    if (Store.get('followMarker') && null !== last_location) {
+        if (loc.lat != last_location.lat || loc.lng != last_location.lng) {
+            map.panTo(newLocation);
+        }
+    }
+    marker.setPosition(newLocation);
+    last_location = loc;
+}
+
 
 function updateMap() {
 
@@ -861,6 +877,7 @@ function updateMap() {
         clearOutOfBoundsMarkers(map_data.gyms);
         clearOutOfBoundsMarkers(map_data.pokestops);
         clearOutOfBoundsMarkers(map_data.scanned);
+        centerLocationMarker(result.location);
         clearStaleMarkers();
     });
 };
@@ -1157,8 +1174,8 @@ $(function () {
             Store.set('geoLocate', this.checked);
     });
 
-    $('#follow-location').change(function() {
-        Store.set('followLocation', this.checked);
+    $('#follow-marker').change(function() {
+        Store.set('followMarker', this.checked);
     });
 
 });
