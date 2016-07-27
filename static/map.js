@@ -289,6 +289,7 @@ function createSearchMarker() {
             lat: center_lat,
             lng: center_lng
         },
+        zIndex: 10000,
         map: map,
         animation: google.maps.Animation.DROP,
         draggable: true
@@ -525,16 +526,15 @@ function setupPokemonMarker(item, skipNotification, isBounceDisabled) {
             lng: item.longitude
         },
         zIndex: 9999,
-        optimized: false,
         map: map,
         icon: icon,
-		animationDisabled: animationDisabled,
+        animationDisabled: animationDisabled,
     });
 	
-	marker.addListener('click', function() {
-		this.setAnimation(null);
-		this.animationDisabled = true;
-	});
+    marker.addListener('click', function() {
+        this.setAnimation(null);
+        this.animationDisabled = true;
+    });
 
     marker.infoWindow = new google.maps.InfoWindow({
         content: pokemonLabel(item.pokemon_name, item.disappear_time, item.pokemon_id, item.latitude, item.longitude, item.encounter_id),
@@ -553,6 +553,7 @@ function setupPokemonMarker(item, skipNotification, isBounceDisabled) {
 		}
     }
 
+    
     addListeners(marker);
     return marker;
 };
@@ -586,7 +587,6 @@ function setupPokestopMarker(item) {
         },
         map: map,
         zIndex: 2,
-        optimized: false,
         icon: 'static/forts/' + imagename + '.png',
     });
 
