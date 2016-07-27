@@ -12,6 +12,7 @@ var idToPokemon = {};
 
 var excludedPokemon = [];
 var notifiedPokemon = [];
+var last_location = null;
 
 var map;
 var rawDataIsLoading = false;
@@ -142,6 +143,10 @@ var StoreOptions = {
         default: false,
         type: StoreTypes.Boolean
     },
+    followMarker: {
+        default: true,
+        type: StoreTypes.Boolean
+    },
     playSound: {
         default: false,
         type: StoreTypes.Boolean
@@ -221,7 +226,7 @@ function initMap() {
             lat: center_lat,
             lng: center_lng
         },
-        zoom: 16,
+        zoom: 14,
         fullscreenControl: true,
         streetViewControl: false,
 		mapTypeControl: true,
@@ -289,11 +294,15 @@ function createSearchMarker() {
             lat: center_lat,
             lng: center_lng
         },
+        zIndex: 10000,
         map: map,
         animation: google.maps.Animation.DROP,
-        draggable: true,
-        zIndex: 10000
+        draggable: true
     });
+
+    if (null === last_location) {
+        last_location = {lat: center_lat, lng: center_lng};
+    }
 
     var oldLocation = null;
     google.maps.event.addListener(marker, 'dragstart', function() {
@@ -325,6 +334,7 @@ function initSidebar() {
     $('#geoloc-switch').prop('checked', Store.get('geoLocate'));
     $('#scanned-switch').prop('checked', Store.get('showScanned'));
     $('#sound-switch').prop('checked', Store.get('playSound'));
+    $('#follow-marker').prop('checked', Store.get('followMarker'));
 
     var searchBox = new google.maps.places.SearchBox(document.getElementById('next-location'));
 
@@ -525,13 +535,13 @@ function setupPokemonMarker(item, skipNotification, isBounceDisabled) {
         zIndex: 9999,
         map: map,
         icon: icon,
-		animationDisabled: animationDisabled,
+        animationDisabled: animationDisabled,
     });
 	
-	marker.addListener('click', function() {
-		this.setAnimation(null);
-		this.animationDisabled = true;
-	});
+    marker.addListener('click', function() {
+        this.setAnimation(null);
+        this.animationDisabled = true;
+    });
 
     marker.infoWindow = new google.maps.InfoWindow({
         content: pokemonLabel(item.pokemon_name, item.disappear_time, item.pokemon_id, item.latitude, item.longitude, item.encounter_id),
@@ -550,6 +560,7 @@ function setupPokemonMarker(item, skipNotification, isBounceDisabled) {
 		}
     }
 
+    
     addListeners(marker);
     return marker;
 };
@@ -617,7 +628,7 @@ function setupScannedMarker(item) {
         center: circleCenter,
         radius: 100,    // 10 miles in metres
         fillColor: getColorByDate(item.last_modified),
-        strokeWeight: 0.3,
+        strokeWeight: 1,
         fillOpacity: 0.1
     });
 
@@ -869,6 +880,17 @@ function processScanned(i, item) {
 
 }
 
+function centerLocationMarker(loc) {
+    var newLocation = new google.maps.LatLng(loc.lat, loc.lng);
+    if (Store.get('followMarker') && null !== last_location) {
+        if (loc.lat != last_location.lat || loc.lng != last_location.lng) {
+            map.panTo(newLocation);
+        }
+    }
+    marker.setPosition(newLocation);
+    last_location = loc;
+}
+
 
 function updateMap() {
 
@@ -878,11 +900,12 @@ function updateMap() {
         $.each(result.pokestops, processLuredPokemon);
         $.each(result.gyms, processGyms);
         $.each(result.scanned, processScanned);
-        showInBoundsMarkers(map_data.pokemons);
-        showInBoundsMarkers(map_data.lure_pokemons);
-        showInBoundsMarkers(map_data.gyms);
-        showInBoundsMarkers(map_data.pokestops);
-        showInBoundsMarkers(map_data.scanned);
+        clearOutOfBoundsMarkers(map_data.pokemons);
+        clearOutOfBoundsMarkers(map_data.lure_pokemons);
+        clearOutOfBoundsMarkers(map_data.gyms);
+        clearOutOfBoundsMarkers(map_data.pokestops);
+        clearOutOfBoundsMarkers(map_data.scanned);
+        centerLocationMarker(result.location);
         clearStaleMarkers();
     });
 };
@@ -1206,6 +1229,10 @@ $(function () {
             this.checked = false;  
         else   
             Store.set('geoLocate', this.checked);
+    });
+
+    $('#follow-marker').change(function() {
+        Store.set('followMarker', this.checked);
     });
 
 });
