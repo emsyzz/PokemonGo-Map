@@ -1084,7 +1084,9 @@ $(function () {
 
   $('#follow-marker').change(function() {
     Store.set('followMarker', this.checked);
-    map.panTo(new google.maps.LatLng(last_location));
+    if (this.checked) {
+      map.panTo(new google.maps.LatLng(last_location));
+    }
   });
 
   //Wipe off/restore map icons when switches are toggled
