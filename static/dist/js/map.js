@@ -18,6 +18,8 @@ var idToPokemon = {};
 var excludedPokemon = [];
 var notifiedPokemon = [];
 
+var last_location = null;
+
 var map;
 var rawDataIsLoading = false;
 var locationMarker;
@@ -146,6 +148,10 @@ var StoreOptions = (_StoreOptions = {
         default: false,
         type: StoreTypes.Boolean
     },
+    followMarker: {
+        default: true,
+        type: StoreTypes.Boolean
+    },
     playSound: {
         default: false,
         type: StoreTypes.Boolean
@@ -272,12 +278,14 @@ function initMap() {
 };
 
 function createSearchMarker() {
+    last_location = {
+        lat: center_lat,
+        lng: center_lng
+    }
     marker = new google.maps.Marker({ //need to keep reference.
-        position: {
-            lat: center_lat,
-            lng: center_lng
-        },
+        position: last_location,
         map: map,
+        xIndex: 10000,
         animation: google.maps.Animation.DROP,
         draggable: true
     });
@@ -289,11 +297,12 @@ function createSearchMarker() {
 
     google.maps.event.addListener(marker, 'dragend', function () {
         var newLocation = marker.getPosition();
+        //last_location = {lat: newLocation.lat(), lng: newLocation.lng()};
         changeSearchLocation(newLocation.lat(), newLocation.lng()).done(function () {
             oldLocation = null;
         }).fail(function () {
             if (oldLocation) {
-                marker.setPosition(oldLocation);
+                //marker.setPosition(oldLocation);
             }
         });
     });
@@ -310,6 +319,7 @@ function initSidebar() {
     $('#geoloc-switch').prop('checked', Store.get('geoLocate'));
     $('#scanned-switch').prop('checked', Store.get('showScanned'));
     $('#sound-switch').prop('checked', Store.get('playSound'));
+    $('#follow-marker').prop('checked', Store.get('followMarker'));
 
     var searchBox = new google.maps.places.SearchBox(document.getElementById('next-location'));
 
@@ -427,7 +437,6 @@ function setupPokemonMarker(item, skipNotification, isBounceDisabled) {
             lng: item.longitude
         },
         zIndex: 9999,
-        optimized: false,
         map: map,
         icon: icon,
         animationDisabled: animationDisabled
@@ -488,7 +497,6 @@ function setupPokestopMarker(item) {
         },
         map: map,
         zIndex: 2,
-        optimized: false,
         icon: 'static/forts/' + imagename + '.png'
     });
 
@@ -522,7 +530,8 @@ function setupScannedMarker(item) {
         center: circleCenter,
         radius: 100, // 10 miles in metres
         fillColor: getColorByDate(item.last_modified),
-        strokeWeight: 1
+        strokeWeight: 0.3,
+        fillOpacity: 0.1
     });
 
     // marker.infoWindow = new google.maps.InfoWindow({
@@ -554,18 +563,7 @@ function addListeners(marker) {
         marker.persist = null;
     });
 
-    marker.addListener('mouseover', function () {
-        marker.infoWindow.open(map, marker);
-        clearSelection();
-        updateLabelDiffTime();
-    });
-
-    marker.addListener('mouseout', function () {
-        if (!marker.persist) {
-            marker.infoWindow.close();
-        }
-    });
-    return marker;
+     return marker;
 };
 
 function clearStaleMarkers() {
@@ -775,6 +773,17 @@ function processScanned(i, item) {
     }
 }
 
+function followMarker(loc) {
+    var LatLng = new google.maps.LatLng(loc.lat, loc.lng);
+    if (last_location === null || (loc.lat != last_location.lat || loc.lng != last_location.lng)) {
+        marker.setPosition(LatLng);
+        if (Store.get('followMarker')) {
+            map.panTo(LatLng);
+        }
+    }
+    last_location = loc;
+}
+
 function updateMap() {
 
     loadRawData().done(function (result) {
@@ -788,6 +797,7 @@ function updateMap() {
         showInBoundsMarkers(map_data.gyms);
         showInBoundsMarkers(map_data.pokestops);
         showInBoundsMarkers(map_data.scanned);
+        followMarker(result.location);
         clearStaleMarkers();
     });
 };
@@ -1100,6 +1110,11 @@ $(function () {
         Store.set('iconSizeModifier', this.value);
         redrawPokemon(map_data.pokemons);
         redrawPokemon(map_data.lure_pokemons);
+    });
+
+    $('#follow-marker').change(function() {
+        Store.set('followMarker', this.checked);
+        map.panTo(new google.maps.LatLng(last_location));
     });
 
     $('#geoloc-switch').change(function () {
